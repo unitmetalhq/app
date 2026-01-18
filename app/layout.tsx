@@ -11,14 +11,14 @@ import Header from "@/components/header";
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'UnitMetal',
+  title: 'UnitMetal App',
   description: 'Professional interface for the future of finance',
-  metadataBase: new URL('https://www.unitmetal.com'),
+  metadataBase: new URL('https://app.unitmetal.com'),
   openGraph: {
-    title: 'UnitMetal',
+    title: 'UnitMetal App',
     description: 'Professional interface for the future of finance',
-    url: 'https://www.unitmetal.com',
-    siteName: 'UnitMetal',
+    url: 'https://app.unitmetal.com',
+    siteName: 'UnitMetal App',
     images: [
       {
         url: '/unitmetal-tbn.png',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'UnitMetal',
+    title: 'UnitMetal App',
     description: 'Professional interface for the future of finance',
     creator: '@unitmetalHQ',
     images: ['/unitmetal-tbn.png'],
