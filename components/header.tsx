@@ -1,5 +1,5 @@
 import ThemeToggle from "@/components/theme-toggle";
-// import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Header() {
@@ -11,8 +11,9 @@ export default function Header() {
         size="icon"
       >
       </SidebarTrigger>
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-row gap-2 items-center">
         <ThemeToggle />
+        <ConnectButton label="Connect" showBalance={false} />
       </div>
     </div>
   )

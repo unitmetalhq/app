@@ -5,6 +5,7 @@ import {
   RainbowKitProvider,
   getDefaultWallets,
   getDefaultConfig,
+  lightTheme,
 } from "@rainbow-me/rainbowkit";
 import { injectedWallet, trustWallet, ledgerWallet } from "@rainbow-me/rainbowkit/wallets";
 import { mainnet, arbitrum, base, unichain } from "wagmi/chains";
@@ -50,7 +51,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider>
+          <RainbowKitProvider 
+            theme={lightTheme({
+              borderRadius: 'none',
+            })}
+          >
             {children}
           </RainbowKitProvider>
         </QueryClientProvider>
