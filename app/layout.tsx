@@ -3,9 +3,10 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import SiteHeader from "@/components/site-header";
-import Footer from "@/components/footer";
 import { Providers } from "@/app/providers";
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import Header from "@/components/header";
 
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"] });
 
@@ -48,20 +49,22 @@ export default function RootLayout({
       <body
         className={jetBrainsMono.className}
       >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Providers>
-              <main className="flex flex-col gap-12 items-center p-6 md:p-10 pb-12">
-                <SiteHeader />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>
+            <SidebarProvider>
+              <AppSidebar />
+              <main className="flex flex-col w-full pb-12">
+                <Header />
                 {children}
-                <Footer />
               </main>
-            </Providers>
-          </ThemeProvider>
+            </SidebarProvider>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
