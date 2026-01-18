@@ -1,10 +1,11 @@
 "use client"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { IndexSupply } from 'idxs'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
+import { EditorView } from '@codemirror/view'
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github'
 import { format } from 'sql-formatter'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,16 +20,65 @@ function jsonReplacer(_key: string, value: unknown) {
   return value
 }
 
+type FetchParams = {
+  query: string
+  signatures?: IndexSupply.Signature[]
+  cursor?: string
+}
+
+const RATE_LIMIT = 5
+const RESET_INTERVAL = 60 // seconds
+
 export default function QueryPage() {
   const [query, setQuery] = useState('')
-  const [submittedQuery, setSubmittedQuery] = useState('')
+  const [signatures, setSignatures] = useState('')
+  const [queryCount, setQueryCount] = useState(0)
+  const [secondsUntilReset, setSecondsUntilReset] = useState(RESET_INTERVAL)
   const { resolvedTheme } = useTheme()
 
-  const { data, error, isFetching } = useQuery({
-    queryKey: ['sql-query', submittedQuery],
-    queryFn: () => is.fetch({ query: submittedQuery }),
-    enabled: !!submittedQuery.trim(),
+  useEffect(() => {
+    if (queryCount === 0) return
+
+    const interval = setInterval(() => {
+      setSecondsUntilReset((prev) => {
+        if (prev <= 1) {
+          setQueryCount(0)
+          return RESET_INTERVAL
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [queryCount])
+
+  const { mutate, data, error, isPending } = useMutation({
+    mutationFn: (params: FetchParams) => is.fetch(params),
   })
+
+  const isRateLimited = queryCount >= RATE_LIMIT
+
+  function executeQuery(cursor?: string) {
+    if (isRateLimited) return
+
+    const sigList = signatures
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    setQueryCount((prev) => prev + 1)
+    mutate({
+      query,
+      signatures: sigList.length > 0 ? sigList as IndexSupply.Signature[] : undefined,
+      cursor,
+    })
+  }
+
+  function loadNextPage() {
+    if (data?.cursor) {
+      executeQuery(data.cursor)
+    }
+  }
 
   const result = error
     ? JSON.stringify({ error: String(error) }, jsonReplacer, 2)
@@ -42,8 +92,8 @@ export default function QueryPage() {
         <h1 className="text-2xl font-bold">Query</h1>
         <p className="text-sm text-muted-foreground">Use SQL to fetch onchain data. Powered by <a href="https://indexsupply.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline underline-offset-2">IndexSupply</a>.</p>
       </div>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col gap-2 min-w-0">
           <div className="flex flex-row justify-between items-center">
             <label className="text-sm font-medium text-muted-foreground">Editor</label>
             <Button
@@ -58,28 +108,55 @@ export default function QueryPage() {
           <CodeMirror
             value={query}
             onChange={setQuery}
-            extensions={[sql()]}
+            extensions={[sql(), EditorView.lineWrapping]}
             theme={resolvedTheme === 'dark' ? githubDark : githubLight}
             placeholder="Enter your SQL query here..."
             height="400px"
-            className="overflow-auto rounded-none"
+            className="rounded-none"
           />
         </div>
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            Signatures <span className="text-xs">(optional, one per line)</span>
+          </label>
+          <Textarea
+            value={signatures}
+            onChange={(e) => setSignatures(e.target.value)}
+            placeholder="event Transfer(address indexed from, address indexed to, uint256 value)"
+            className="h-[100px] resize-none overflow-auto font-mono text-sm rounded-none"
+          />
+        </div>
+        <div className="flex flex-row gap-2 items-center">
           <Button
-            onClick={() => setSubmittedQuery(query)}
+            onClick={() => executeQuery()}
             className="rounded-none hover:cursor-pointer"
-            disabled={isFetching || !query.trim()}
+            disabled={isPending || !query.trim() || isRateLimited}
           >
-            {isFetching ? 'Executing...' : 'Execute Query'}
+            {isPending ? 'Executing...' : 'Execute Query'}
           </Button>
+          {data?.cursor && (
+            <Button
+              variant="outline"
+              className="rounded-none hover:cursor-pointer"
+              onClick={loadNextPage}
+              disabled={isPending || isRateLimited}
+            >
+              Next Page
+            </Button>
+          )}
           <Button
             variant="outline"
             className="rounded-none hover:cursor-pointer"
-            onClick={() => setQuery('')}
+            onClick={() => {
+              setQuery('')
+              setSignatures('')
+            }}
           >
             Clear
           </Button>
+          <span className="text-sm text-muted-foreground ml-auto">
+            {queryCount}/{RATE_LIMIT} queries • resets in {secondsUntilReset}s
+          </span>
         </div>
 
         <div className="flex flex-col gap-2">
