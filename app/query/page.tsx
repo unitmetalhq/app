@@ -1,12 +1,17 @@
 "use client"
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { IndexSupply } from 'idxs'
 import { useMutation } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
-import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github'
+
+const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-muted/50 animate-pulse rounded-none border" />,
+})
 import { format } from 'sql-formatter'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
